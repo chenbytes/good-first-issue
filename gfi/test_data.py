@@ -7,6 +7,8 @@ from collections import Counter
 
 import toml
 
+from gfi.github_urls import parse_github_url
+
 DATA_FILE_PATH = "data/repositories.toml"
 LABELS_FILE_PATH = "data/labels.json"
 
@@ -51,8 +53,26 @@ class TestDataSanity(unittest.TestCase):
         """Verify that all entries are unique."""
         data = _get_data_from_toml(DATA_FILE_PATH)
         repos = data.get("repositories", [])
-        print([item for item, count in Counter(repos).items() if count > 1])
         assert len(repos) == len(set(repos))
+
+
+class TestGitHubUrlParsing(unittest.TestCase):
+    """Test parsing the repository URL formats used by the data file."""
+
+    def test_parse_plain_github_url(self):
+        assert parse_github_url("github.com/owner/repo") == {"owner": "owner", "name": "repo"}
+
+    def test_parse_https_github_url(self):
+        assert parse_github_url("https://github.com/owner/repo.git") == {
+            "owner": "owner",
+            "name": "repo",
+        }
+
+    def test_parse_ssh_github_url(self):
+        assert parse_github_url("git@github.com:owner/repo.git") == {"owner": "owner", "name": "repo"}
+
+    def test_reject_non_github_url(self):
+        assert parse_github_url("https://example.com/owner/repo") == {}
 
 
 if __name__ == "__main__":

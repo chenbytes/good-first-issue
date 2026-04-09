@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import json
 import random
-import re
 import threading
 import time
 from collections import Counter
@@ -15,6 +14,7 @@ from typing import TypedDict, Dict, Union, Sequence, Optional
 import toml
 
 from github3 import exceptions, login
+from gfi.github_urls import parse_github_url
 from numerize import numerize
 from emoji import emojize
 from slugify import slugify
@@ -24,7 +24,6 @@ MAX_CONCURRENCY = 5  # max number of requests to make to GitHub in parallel
 REPO_DATA_FILE = "data/repositories.toml"
 REPO_GENERATED_DATA_FILE = "data/generated.json"
 TAGS_GENERATED_DATA_FILE = "data/tags.json"
-GH_URL_PATTERN = re.compile(r"[http://|https://]?github.com/(?P<owner>[\w\.-]+)/(?P<name>[\w\.-]+)/?")
 LABELS_DATA_FILE = "data/labels.json"
 ISSUE_STATE = "open"
 ISSUE_SORT = "created"
@@ -112,20 +111,12 @@ class GitHubRateLimiter:
             logger.warning("Rate limit hit. All workers pause for {:.0f}s", wait_time)
 
 
-def parse_github_url(url: str) -> dict:
-    """Take the GitHub repo URL and return a tuple with owner login and repo name."""
-    match = GH_URL_PATTERN.search(url)
-    if match:
-        return match.groupdict()
-    return {}
-
-
 class RepositoryIdentifier(TypedDict):
     owner: str
     name: str
 
 
-RepositoryInfo = Dict["str", Union[str, int, Sequence]]
+RepositoryInfo = Dict[str, Union[str, int, Sequence]]
 
 
 def get_repository_info(
